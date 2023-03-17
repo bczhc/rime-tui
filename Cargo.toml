@@ -13,3 +13,4 @@ unicode-width = "0.1.10"
 x11 = { version = "2.21.0", features = ["xlib", "xinput"] }
 cstr = "0.2.11"
 libc = "0.2.140"
+home = "0.5.4"
