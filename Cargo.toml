@@ -5,6 +5,8 @@ edition = "2021"
 authors = ["bczhc <bczhc0@126.com>"]
 license = "MIT"
 description = "TUI App for Rime"
+repository = "https://github.com/bczhc/rime-tui"
+readme = "README.md"
 
 [dependencies]
 clap = "4.1.9"
