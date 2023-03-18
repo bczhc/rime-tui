@@ -22,9 +22,16 @@ where
 }
 
 #[derive(Debug, Default)]
+pub struct Candidate {
+    pub text: String,
+    pub comment: String,
+    pub highlighted: bool,
+}
+
+#[derive(Debug, Default)]
 pub struct UiData {
     pub preedit: String,
-    pub candidates: Vec<String>,
+    pub candidates: Vec<Candidate>,
     pub output: String,
 }
 
@@ -98,7 +105,13 @@ impl TuiApp<CrosstermBackend<Stdout>> {
             .candidates
             .iter()
             .enumerate()
-            .map(|(i, c)| ListItem::new(format!("{}. {}", i + 1, c)))
+            .map(|(i, c)| {
+                let mut item = ListItem::new(format!("{}. {}{}", i + 1, c.text, c.comment));
+                if c.highlighted {
+                    item = item.style(Style::default().fg(Color::Black).bg(Color::White));
+                }
+                item
+            })
             .collect::<Vec<_>>();
         let list =
             List::new(items).block(Block::default().borders(Borders::ALL).title("Candidates"));

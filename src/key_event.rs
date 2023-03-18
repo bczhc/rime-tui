@@ -78,6 +78,10 @@ where
                 let c = char::from("1234567890".as_bytes()[(detail - 10) as usize]).to_string();
                 (self.callback)(compose(&c).as_str());
             }
+            111 => (self.callback)(compose("Up").as_str()),
+            116 => (self.callback)(compose("Down").as_str()),
+            113 => (self.callback)(compose("Left").as_str()),
+            114 => (self.callback)(compose("Right").as_str()),
             _ => {}
         }
 

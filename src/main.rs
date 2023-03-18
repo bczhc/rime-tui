@@ -4,7 +4,7 @@ use std::time::Duration;
 use rime_tui::cli::build_cli;
 use rime_tui::key_event::KeyEventResolver;
 use rime_tui::rime::{Config, DeployResult, Engine};
-use rime_tui::tui::TuiApp;
+use rime_tui::tui::{Candidate, TuiApp};
 use rime_tui::xinput::XInput;
 
 fn main() -> anyhow::Result<()> {
@@ -77,8 +77,13 @@ fn main() -> anyhow::Result<()> {
         ui_data.candidates = menu
             .candidates
             .iter()
-            .map(|x| format!("{}{}", x.text, x.comment.unwrap_or("")))
-            .collect::<Vec<_>>();
+            .enumerate()
+            .map(|(i, x)| Candidate {
+                text: x.text.into(),
+                comment: x.comment.unwrap_or("").into(),
+                highlighted: i == menu.highlighted_candidate_index as usize,
+            })
+            .collect();
         drop(context);
         let commit = engine.commit();
         // TODO: if taking the ownership of `commit` in the `match` below,
