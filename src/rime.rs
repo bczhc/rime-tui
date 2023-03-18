@@ -31,6 +31,7 @@ pub enum RimeError {
     ProcessKey,
     CloseSession,
     SessionNotExists,
+    SimulateKeySequence,
 }
 
 impl Display for RimeError {
@@ -100,11 +101,15 @@ impl Engine {
         }
     }
 
-    pub fn process_key(&mut self, event: KeyEvent) -> Result<(), RimeError> {
+    fn get_session(&self) -> Result<&Session, RimeError> {
         let Some(session) = self.session.as_ref() else {
             return Err(RimeError::SessionNotExists)
         };
-        session
+        Ok(session)
+    }
+
+    pub fn process_key(&mut self, event: KeyEvent) -> Result<(), RimeError> {
+        self.get_session()?
             .process_key(event)
             .map_err(|_| RimeError::ProcessKey)?;
         Ok(())
@@ -134,6 +139,13 @@ impl Engine {
                 session.close().map_err(|_| RimeError::CloseSession)?;
             }
         }
+        Ok(())
+    }
+
+    pub fn simulate_key_sequence(&self, sequence: &str) -> Result<(), RimeError> {
+        self.get_session()?
+            .simulate_key_sequence(sequence)
+            .map_err(|_| RimeError::SimulateKeySequence)?;
         Ok(())
     }
 }
