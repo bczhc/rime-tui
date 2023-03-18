@@ -1,11 +1,12 @@
 use std::io;
 use std::io::{stdout, Stdout};
+use std::thread::spawn;
 
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
-use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
+use crossterm::{event, execute};
 use tui::backend::{Backend, CrosstermBackend};
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Style};
@@ -42,6 +43,15 @@ impl TuiApp<CrosstermBackend<Stdout>> {
         enable_raw_mode()?;
         let mut stdout = stdout();
         execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+        // consume terminal key input events
+        // Because we are getting keyboard events from X11 APIs, but not via this,
+        // so if don't do this, when the app is terminated, the screen will leave
+        // all the text the user just inputted.
+        // This method is a bit tricky but just works. And I haven't found a better way (I can't
+        // get `event:poll` work).
+        spawn(|| loop {
+            event::read().unwrap();
+        });
         Ok(())
     }
 
