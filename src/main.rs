@@ -44,6 +44,26 @@ fn main() -> anyhow::Result<()> {
     let mut key_resolver = KeyEventResolver::new(|repr| {
         let mut engine = engine.borrow_mut();
         let mut app = app.borrow_mut();
+        let ui_data = &mut app.ui_data;
+
+        let status = engine.status().unwrap();
+
+        if repr == "{BackSpace}" && !status.is_composing && ui_data.preedit.is_empty() {
+            ui_data.output.pop();
+            app.redraw().unwrap();
+            return;
+        }
+        if repr == "{Return}" && !status.is_composing {
+            ui_data.output.push('\n');
+            app.redraw().unwrap();
+            return;
+        }
+        if repr == "{space}" && !status.is_composing && ui_data.preedit.is_empty() {
+            ui_data.output.push(' ');
+            app.redraw().unwrap();
+            return;
+        }
+        drop(status);
 
         if engine.simulate_key_sequence(repr).is_err() {
             eprintln!("Key simulation failed: {}", repr);
@@ -53,7 +73,6 @@ fn main() -> anyhow::Result<()> {
         let menu = &context.as_ref().unwrap().menu;
         let preedit = context.as_ref().unwrap().composition.preedit.unwrap_or("");
 
-        let ui_data = &mut app.ui_data;
         ui_data.preedit = String::from(preedit);
         ui_data.candidates = menu
             .candidates

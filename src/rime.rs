@@ -9,7 +9,7 @@ use cstr::cstr;
 use librime_sys::{RimeSessionId, RimeSetNotificationHandler};
 use rime_api::{
     create_session, initialize, setup, start_maintenance, Commit, Context, KeyEvent, Session,
-    Traits,
+    Status, Traits,
 };
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -36,6 +36,7 @@ pub enum RimeError {
     SessionNotExists,
     SimulateKeySequence,
     CreateSession,
+    GetStatus,
 }
 
 impl Display for RimeError {
@@ -125,6 +126,12 @@ impl Engine {
 
     pub fn commit(&mut self) -> Option<Commit> {
         self.session.as_ref()?.commit()
+    }
+
+    pub fn status(&mut self) -> Result<Status, RimeError> {
+        self.get_session()?
+            .status()
+            .map_err(|_| RimeError::GetStatus)
     }
 
     /// Note when using this, function `start_maintenance` needs `full_check` to be `true`.

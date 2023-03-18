@@ -33,6 +33,8 @@ where
     }
 
     pub fn on_key_event(&mut self, event: &XIDeviceEvent) {
+        // Note: can't get if the key gets consumed by Rime processors when using `send_key_sequence`
+        // maybe there's a need to switch to `RimeProcessKey`
         let detail = event.detail as u32;
 
         let release = event.evtype == xlib::KeyRelease;
