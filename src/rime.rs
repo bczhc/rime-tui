@@ -7,7 +7,10 @@ use std::{hint, thread};
 
 use cstr::cstr;
 use librime_sys::{RimeSessionId, RimeSetNotificationHandler};
-use rime_api::{initialize, setup, start_maintenance, Commit, Context, KeyEvent, Session, Traits};
+use rime_api::{
+    create_session, initialize, setup, start_maintenance, Commit, Context, KeyEvent, Session,
+    Traits,
+};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum DeployResult {
@@ -32,6 +35,7 @@ pub enum RimeError {
     CloseSession,
     SessionNotExists,
     SimulateKeySequence,
+    CreateSession,
 }
 
 impl Display for RimeError {
@@ -146,6 +150,20 @@ impl Engine {
         self.get_session()?
             .simulate_key_sequence(sequence)
             .map_err(|_| RimeError::SimulateKeySequence)?;
+        Ok(())
+    }
+
+    pub fn create_session(&mut self) -> Result<(), RimeError> {
+        let session = create_session();
+        if !session.find_session() {
+            return Err(RimeError::CreateSession);
+        }
+        self.session = Some(session);
+        Ok(())
+    }
+
+    pub fn select_schema(&mut self, id: &str) -> Result<(), RimeError> {
+        self.get_session()?.select_schema(id);
         Ok(())
     }
 }

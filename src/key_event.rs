@@ -37,28 +37,41 @@ where
 
         let release = event.evtype == xlib::KeyRelease;
 
+        let compose = |name: &str| {
+            if release {
+                format!("{{Release+{}}}", name)
+            } else {
+                wrap(name)
+            }
+        };
+
         match detail {
             24..=33 => {
-                let mut c = char::from("qwertyuiop".as_bytes()[(detail - 24) as usize]).to_string();
-                if release {
-                    c = format!("Release+{}", c);
-                }
-                (self.callback)(&c);
+                let c = char::from("qwertyuiop".as_bytes()[(detail - 24) as usize]).to_string();
+                (self.callback)(compose(&c).as_str());
             }
             38..=46 => {
-                let mut c = char::from("asdfghjkl".as_bytes()[(detail - 38) as usize]).to_string();
-                if release {
-                    c = format!("Release+{}", c);
-                }
-                (self.callback)(&c);
+                let c = char::from("asdfghjkl".as_bytes()[(detail - 38) as usize]).to_string();
+                (self.callback)(compose(&c).as_str());
             }
             52..=58 => {
-                let mut c = char::from("zxcvbnm".as_bytes()[(detail - 52) as usize]).to_string();
-                if release {
-                    c = format!("Release+{}", c);
-                }
-                (self.callback)(&c);
+                let c = char::from("zxcvbnm".as_bytes()[(detail - 52) as usize]).to_string();
+                (self.callback)(compose(&c).as_str());
             }
+            65 => (self.callback)(compose("space").as_str()),
+            22 => (self.callback)(compose("BackSpace").as_str()),
+            36 => (self.callback)(compose("Return").as_str()),
+            9 => (self.callback)(compose("Escape").as_str()),
+            20 => (self.callback)(compose("minus").as_str()),
+            21 => (self.callback)(compose("equal").as_str()),
+            34 => (self.callback)(compose("bracketleft").as_str()),
+            35 => (self.callback)(compose("bracketright").as_str()),
+            51 => (self.callback)(compose("backslash").as_str()),
+            47 => (self.callback)(compose("semicolon").as_str()),
+            48 => (self.callback)(compose("apostrophe").as_str()),
+            59 => (self.callback)(compose("comma").as_str()),
+            60 => (self.callback)(compose("period").as_str()),
+            61 => (self.callback)(compose("slash").as_str()),
             _ => {}
         }
 
@@ -78,4 +91,8 @@ where
             _ => {}
         };
     }
+}
+
+pub fn wrap(key: &str) -> String {
+    format!("{{{}}}", key)
 }

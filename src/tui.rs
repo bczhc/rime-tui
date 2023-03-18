@@ -29,15 +29,20 @@ struct UiData {
 
 impl TuiApp<CrosstermBackend<Stdout>> {
     pub fn new() -> io::Result<Self> {
-        enable_raw_mode()?;
-        let mut stdout = stdout();
-        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+        let stdout = stdout();
         let backend = CrosstermBackend::new(stdout);
-        let mut terminal = Terminal::new(backend)?;
+        let terminal = Terminal::new(backend)?;
         Ok(Self {
             ui_data: Default::default(),
             terminal,
         })
+    }
+
+    pub fn start() -> io::Result<()> {
+        enable_raw_mode()?;
+        let mut stdout = stdout();
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+        Ok(())
     }
 
     pub fn stop(&mut self) -> io::Result<()> {
