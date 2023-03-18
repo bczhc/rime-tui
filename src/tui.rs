@@ -97,7 +97,8 @@ impl TuiApp<CrosstermBackend<Stdout>> {
         let items = ui_data
             .candidates
             .iter()
-            .map(|x| ListItem::new(x.as_str()))
+            .enumerate()
+            .map(|(i, c)| ListItem::new(format!("{}. {}", i + 1, c)))
             .collect::<Vec<_>>();
         let list =
             List::new(items).block(Block::default().borders(Borders::ALL).title("Candidates"));

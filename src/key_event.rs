@@ -73,7 +73,7 @@ where
             60 => (self.callback)(compose("period").as_str()),
             61 => (self.callback)(compose("slash").as_str()),
             10..=19 => {
-                let c = char::from("1234567890".as_bytes()[(detail - 52) as usize]).to_string();
+                let c = char::from("1234567890".as_bytes()[(detail - 10) as usize]).to_string();
                 (self.callback)(compose(&c).as_str());
             }
             _ => {}
