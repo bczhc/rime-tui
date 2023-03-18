@@ -38,7 +38,7 @@ impl TuiApp<CrosstermBackend<Stdout>> {
         })
     }
 
-    pub fn start() -> io::Result<()> {
+    pub fn start(&self) -> io::Result<()> {
         enable_raw_mode()?;
         let mut stdout = stdout();
         execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;

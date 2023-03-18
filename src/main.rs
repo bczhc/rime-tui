@@ -37,6 +37,8 @@ fn main() -> anyhow::Result<()> {
     engine.select_schema(schema)?;
 
     let mut app = TuiApp::new()?;
+    app.start()?;
+
     app.redraw()?;
 
     let engine = RefCell::new(engine);
