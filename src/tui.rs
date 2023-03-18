@@ -16,12 +16,12 @@ pub struct TuiApp<B>
 where
     B: Backend,
 {
-    ui_data: UiData,
+    pub ui_data: UiData,
     terminal: Terminal<B>,
 }
 
 #[derive(Debug, Default)]
-struct UiData {
+pub struct UiData {
     pub preedit: String,
     pub candidates: Vec<String>,
     pub output: String,
@@ -84,7 +84,11 @@ impl TuiApp<CrosstermBackend<Stdout>> {
             .block(Block::default().borders(Borders::ALL).title("Message"));
         f.render_widget(message, chunks[0]);
 
-        let items = vec![ListItem::new("A"), ListItem::new("B"), ListItem::new("CC")];
+        let items = ui_data
+            .candidates
+            .iter()
+            .map(|x| ListItem::new(x.as_str()))
+            .collect::<Vec<_>>();
         let list =
             List::new(items).block(Block::default().borders(Borders::ALL).title("Candidates"));
         f.render_stateful_widget(list, chunks[1], &mut ListState::default());
