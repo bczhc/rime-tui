@@ -19,12 +19,20 @@ pub fn build_cli() -> Command {
             Arg::new("shared-dir")
                 .long("shared-dir")
                 .default_value(shared_data_dir)
-                .value_hint(ValueHint::DirPath),
+                .value_hint(ValueHint::DirPath)
+                .action(ArgAction::Set),
         )
         .arg(
             Arg::new("user-dir")
                 .long("user-dir")
                 .default_value(user_data_dir)
-                .value_hint(ValueHint::DirPath),
+                .value_hint(ValueHint::DirPath)
+                .action(ArgAction::Set),
+        )
+        .arg(
+            Arg::new("exit-command")
+                .long("exit-command")
+                .default_value("/exit")
+                .action(ArgAction::Set),
         )
 }

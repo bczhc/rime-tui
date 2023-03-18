@@ -1,20 +1,18 @@
-use anyhow::anyhow;
-use rime_api::{Commit, KeyEvent};
+use std::cell::RefCell;
+use std::time::Duration;
+
 use rime_tui::cli::build_cli;
 use rime_tui::key_event::KeyEventResolver;
 use rime_tui::rime::{Config, DeployResult, Engine};
 use rime_tui::tui::TuiApp;
 use rime_tui::xinput::XInput;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
     let matches = build_cli().get_matches();
     let schema = matches.get_one::<String>("schema").unwrap();
     let user_dir = matches.get_one::<String>("user-dir").unwrap();
     let shared_dir = matches.get_one::<String>("shared-dir").unwrap();
+    let exit_command = matches.get_one::<String>("exit-command").unwrap();
 
     let mut engine = Engine::new(&Config {
         user_data_dir: user_dir.into(),
@@ -71,9 +69,8 @@ fn main() -> anyhow::Result<()> {
             Some(c) => c.text,
         };
         ui_data.output.push_str(commit);
-        app.redraw().unwrap();
 
-        // app.redraw().unwrap();
+        app.redraw().unwrap();
     });
 
     let input = XInput::new(None);
@@ -81,11 +78,16 @@ fn main() -> anyhow::Result<()> {
         let Some((_, event)) = input.next_event() else {
             continue
         };
+
         key_resolver.on_key_event(&event);
+
+        if &app.borrow().ui_data.preedit == exit_command {
+            break;
+        }
     }
 
-    engine.borrow().close()?;
-    // app.stop()?;
+    engine.borrow_mut().close()?;
+    app.borrow_mut().stop()?;
 
     Ok(())
 }
