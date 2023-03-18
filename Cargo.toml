@@ -2,6 +2,9 @@
 name = "rime-tui"
 version = "0.1.0"
 edition = "2021"
+authors = ["bczhc <bczhc0@126.com>"]
+license = "MIT"
+description = "TUI App for Rime"
 
 [dependencies]
 clap = "4.1.9"
