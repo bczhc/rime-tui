@@ -40,24 +40,44 @@ where
         let release = event.evtype == xlib::KeyRelease;
 
         let compose = |name: &str| {
-            if release {
-                format!("{{Release+{}}}", name)
+            let mut key = if release {
+                format!("Release+{}", name)
             } else {
-                wrap(name)
+                name.into()
+            };
+
+            if self.ctrl_pressed {
+                key = format!("Control+{}", key);
             }
+            if self.shift_pressed {
+                key = format!("Shift+{}", key);
+            }
+            if self.alt_pressed {
+                key = format!("Alt+{}", key);
+            }
+            wrap(&key)
         };
 
         match detail {
             24..=33 => {
-                let c = char::from("qwertyuiop".as_bytes()[(detail - 24) as usize]).to_string();
+                let mut c = char::from("qwertyuiop".as_bytes()[(detail - 24) as usize]).to_string();
+                if self.shift_pressed {
+                    c = c.to_ascii_uppercase();
+                }
                 (self.callback)(compose(&c).as_str());
             }
             38..=46 => {
-                let c = char::from("asdfghjkl".as_bytes()[(detail - 38) as usize]).to_string();
+                let mut c = char::from("asdfghjkl".as_bytes()[(detail - 38) as usize]).to_string();
+                if self.shift_pressed {
+                    c = c.to_ascii_uppercase();
+                }
                 (self.callback)(compose(&c).as_str());
             }
             52..=58 => {
-                let c = char::from("zxcvbnm".as_bytes()[(detail - 52) as usize]).to_string();
+                let mut c = char::from("zxcvbnm".as_bytes()[(detail - 52) as usize]).to_string();
+                if self.shift_pressed {
+                    c = c.to_ascii_uppercase();
+                }
                 (self.callback)(compose(&c).as_str());
             }
             65 => (self.callback)(compose("space").as_str()),
