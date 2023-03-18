@@ -428,6 +428,7 @@ dependencies = [
  "cstr",
  "home",
  "libc",
+ "librime-sys",
  "rime-api",
  "tui",
  "unicode-width",

@@ -1,5 +1,7 @@
+use anyhow::anyhow;
+use rime_api::KeyEvent;
 use rime_tui::cli::build_cli;
-use rime_tui::rime::{Config, Engine};
+use rime_tui::rime::{Config, DeployResult, Engine};
 use rime_tui::tui::TuiApp;
 use rime_tui::xinput::XInput;
 use std::time::Duration;
@@ -14,8 +16,19 @@ fn main() -> anyhow::Result<()> {
         user_data_dir: user_dir.into(),
         shared_data_dir: shared_dir.into(),
     });
-    engine.wait_for_session_created(Duration::from_secs(1));
-    println!("Done!!");
+    let deploy_result = engine.wait_for_deploy_result(Duration::from_secs_f64(0.1));
+    match deploy_result {
+        DeployResult::Init => {
+            unreachable!();
+        }
+        DeployResult::Success => {
+            println!("Deployment succeeded");
+        }
+        DeployResult::Failure => {
+            eprintln!("Deployment failed");
+            return Ok(());
+        }
+    }
     engine.close()?;
     return Ok(());
 
