@@ -57,10 +57,7 @@ fn main() -> anyhow::Result<()> {
         let commit = engine.commit();
         let commit = commit.as_ref();
         if let Some(commit) = commit {
-            println!(
-                "Commit: wmgmu ryvxdt[dta     wmgmu ryvxdt[t t t q viircbeqs r]]]][][][]{}",
-                commit.text
-            );
+            println!("Commit: {}", commit.text);
         }
     });
 
