@@ -12,6 +12,7 @@ use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
 use tui::{Frame, Terminal};
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 pub struct TuiApp<B>
 where
@@ -109,9 +110,19 @@ impl TuiApp<CrosstermBackend<Stdout>> {
         let message_chunk = chunks[0];
         let log_chunk = chunks[1];
 
-        let message = Paragraph::new(ui_data.output.as_ref())
+        let message_width = message_chunk.width - 2 /* border size takes 2 */;
+        let message_height = message_chunk.height - 2;
+        let wrapped_message = wrap_text(&ui_data.output, message_width);
+        let message = Paragraph::new(wrapped_message.1)
             .block(Block::default().borders(Borders::ALL).title("Output"))
-            .wrap(Wrap { trim: false });
+            .scroll((
+                if wrapped_message.0 > message_height {
+                    wrapped_message.0 - message_height
+                } else {
+                    0
+                },
+                0,
+            ));
         f.render_widget(message, message_chunk);
 
         let items = ui_data
@@ -137,4 +148,32 @@ impl TuiApp<CrosstermBackend<Stdout>> {
             .wrap(Wrap { trim: false });
         f.render_widget(log, log_chunk);
     }
+}
+
+fn wrap_text(text: &str, width: u16) -> (u16, String) {
+    let mut wrapped_lines = String::new();
+    let mut line_count = 0_u16;
+
+    let mut line = String::new();
+    for c in text.chars() {
+        if c == '\n' {
+            wrapped_lines.push_str(&line);
+            wrapped_lines.push('\n');
+            line.clear();
+            line_count += 1;
+            continue;
+        }
+        line.push(c);
+        if line.width() > width as usize - c.width().unwrap_or(1) {
+            wrapped_lines.push_str(&line);
+            wrapped_lines.push('\n');
+            line.clear();
+            line_count += 1;
+        }
+    }
+    if !line.is_empty() {
+        wrapped_lines.push_str(&line);
+        line_count += 1;
+    }
+    (line_count, wrapped_lines)
 }
