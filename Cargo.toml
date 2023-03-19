@@ -10,8 +10,8 @@ readme = "README.md"
 
 [dependencies]
 clap = "4.1.9"
-rime-api = { path = "/home/bczhc/code/rime-api" }
-#rime-api = "0.2.0"
+#rime-api = { path = "/home/bczhc/code/rime-api" }
+rime-api = "0.3.0"
 librime-sys = "0.4.0"
 anyhow = "1.0.69"
 crossterm = "0.26.1"
