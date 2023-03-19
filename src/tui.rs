@@ -110,7 +110,7 @@ impl TuiApp<CrosstermBackend<Stdout>> {
         let log_chunk = chunks[1];
 
         let message = Paragraph::new(ui_data.output.as_ref())
-            .block(Block::default().borders(Borders::ALL).title("Message"))
+            .block(Block::default().borders(Borders::ALL).title("Output"))
             .wrap(Wrap { trim: false });
         f.render_widget(message, message_chunk);
 
