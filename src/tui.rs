@@ -10,7 +10,7 @@ use crossterm::{event, execute};
 use tui::backend::{Backend, CrosstermBackend};
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
+use tui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
 use tui::{Frame, Terminal};
 
 pub struct TuiApp<B>
@@ -110,7 +110,8 @@ impl TuiApp<CrosstermBackend<Stdout>> {
         let log_chunk = chunks[1];
 
         let message = Paragraph::new(ui_data.output.as_ref())
-            .block(Block::default().borders(Borders::ALL).title("Message"));
+            .block(Block::default().borders(Borders::ALL).title("Message"))
+            .wrap(Wrap { trim: false });
         f.render_widget(message, message_chunk);
 
         let items = ui_data
@@ -131,8 +132,9 @@ impl TuiApp<CrosstermBackend<Stdout>> {
 
         let last_line = ui_data.log.last();
         let last_line = last_line.map(|x| x.as_str()).unwrap_or("");
-        let log =
-            Paragraph::new(last_line).block(Block::default().borders(Borders::ALL).title("Log"));
+        let log = Paragraph::new(last_line)
+            .block(Block::default().borders(Borders::ALL).title("Log"))
+            .wrap(Wrap { trim: false });
         f.render_widget(log, log_chunk);
     }
 }
