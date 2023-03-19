@@ -42,8 +42,6 @@ where
     }
 
     pub fn on_key_event(&mut self, event: &XIDeviceEvent) {
-        // Note: can't get if a key gets consumed by Rime processors when using `send_key_sequence`
-        // maybe there's a need to switch to `RimeProcessKey`
         let detail = event.detail as u32;
         let effective = event.mods.effective;
 
