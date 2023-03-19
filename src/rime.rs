@@ -113,11 +113,8 @@ impl Engine {
         Ok(session)
     }
 
-    pub fn process_key(&mut self, event: KeyEvent) -> Result<(), RimeError> {
-        self.get_session()?
-            .process_key(event)
-            .map_err(|_| RimeError::ProcessKey)?;
-        Ok(())
+    pub fn process_key(&mut self, event: KeyEvent) -> Result<bool, RimeError> {
+        Ok(self.get_session()?.process_key(event))
     }
 
     pub fn context(&mut self) -> Option<Context> {

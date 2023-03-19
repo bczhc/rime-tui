@@ -10,7 +10,7 @@ use std::time::Duration;
 use gag::Redirect;
 use libc::{c_int, pipe};
 use once_cell::sync::Lazy;
-use regex::Regex;
+use x11::keysym::*;
 
 use rime_tui::cli::build_cli;
 use rime_tui::fd_reader::FdReader;
@@ -77,37 +77,27 @@ fn main() -> anyhow::Result<()> {
     engine.select_schema(schema)?;
 
     let engine = RefCell::new(engine);
-    let mut key_resolver = KeyEventResolver::new(|repr| {
+    let mut key_resolver = KeyEventResolver::new(|ke| {
         let mut engine = engine.borrow_mut();
         let mut app = app.lock().unwrap();
         let ui_data = &mut app.ui_data;
 
-        let status = engine.status().unwrap();
+        // let status = engine.status().unwrap();
 
-        if repr == "{BackSpace}" && !status.is_composing && ui_data.preedit.is_empty() {
-            ui_data.output.pop();
-            app.redraw().unwrap();
-            return;
-        }
-        if repr == "{Return}" && !status.is_composing {
-            ui_data.output.push('\n');
-            app.redraw().unwrap();
-            return;
-        }
-        if repr == "{space}" && !status.is_composing && ui_data.preedit.is_empty() {
-            ui_data.output.push(' ');
-            app.redraw().unwrap();
-            return;
-        }
-        if Regex::new("^\\{[0-9]}$").unwrap().is_match(repr) && !status.is_composing {
-            ui_data.output.push(char::from(repr.as_bytes()[1]));
-            app.redraw().unwrap();
-            return;
-        }
-        drop(status);
-
-        if engine.simulate_key_sequence(repr).is_err() {
-            eprintln!("Key simulation failed: {}", repr);
+        // kAccepted: true, otherwise false
+        let result = engine.process_key(ke).unwrap();
+        if !result && ke.modifiers == 0 {
+            // default behaviors
+            match ke.key_code as u32 {
+                k @ XK_a..=XK_z => ui_data.output.push(char::from((k - XK_a) as u8 + b'a')),
+                k @ XK_0..=XK_9 => ui_data.output.push(char::from((k - XK_0) as u8 + b'0')),
+                XK_BackSpace => {
+                    ui_data.output.pop();
+                }
+                XK_Return => ui_data.output.push('\n'),
+                XK_space => ui_data.output.push(' '),
+                _ => {}
+            }
         }
 
         let context = engine.context();
