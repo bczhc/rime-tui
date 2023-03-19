@@ -3,7 +3,7 @@ use std::io;
 use std::io::{BufRead, BufReader, Read};
 use std::mem::MaybeUninit;
 use std::os::fd::RawFd;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread::spawn;
 use std::time::Duration;
 
@@ -17,6 +17,7 @@ use rime_tui::key_event::KeyEventResolver;
 use rime_tui::rime::{Config, DeployResult, Engine};
 use rime_tui::tui::{Candidate, TuiApp};
 use rime_tui::xinput::XInput;
+use rime_tui::WithLockExt;
 
 static STDERR_REDIRECT: Lazy<Mutex<Option<Redirect<RawFd>>>> = Lazy::new(|| Mutex::new(None));
 
@@ -27,7 +28,32 @@ fn main() -> anyhow::Result<()> {
     let shared_dir = matches.get_one::<String>("shared-dir").unwrap();
     let exit_command = matches.get_one::<String>("exit-command").unwrap();
 
-    setup_stderr_redirect()?;
+    let app = TuiApp::new()?;
+    let app = Arc::new(Mutex::new(app));
+
+    app.with_lock(|x| x.start().unwrap()).unwrap();
+
+    app.with_lock(|mut x| {
+        x.start()?;
+        x.redraw()
+    })
+    .unwrap()?;
+
+    let app_clone = Arc::clone(&app);
+    spawn(move || {
+        let stderr_reader = setup_stderr_redirect().unwrap();
+        let app = app_clone;
+
+        let reader = BufReader::new(stderr_reader);
+        for line in reader.lines().map(Result::unwrap) {
+            app.with_lock(|mut x| {
+                x.ui_data.log.push(line);
+                x.redraw()
+            })
+            .unwrap()
+            .expect("Redraw error");
+        }
+    });
 
     let mut engine = Engine::new(&Config {
         user_data_dir: user_dir.into(),
@@ -49,16 +75,10 @@ fn main() -> anyhow::Result<()> {
     engine.create_session()?;
     engine.select_schema(schema)?;
 
-    let mut app = TuiApp::new()?;
-    app.start()?;
-
-    app.redraw()?;
-
     let engine = RefCell::new(engine);
-    let app = RefCell::new(app);
     let mut key_resolver = KeyEventResolver::new(|repr| {
         let mut engine = engine.borrow_mut();
-        let mut app = app.borrow_mut();
+        let mut app = app.lock().unwrap();
         let ui_data = &mut app.ui_data;
 
         let status = engine.status().unwrap();
@@ -120,13 +140,13 @@ fn main() -> anyhow::Result<()> {
 
         key_resolver.on_key_event(&event);
 
-        if &app.borrow().ui_data.preedit == exit_command {
+        if &app.lock().unwrap().ui_data.preedit == exit_command {
             break;
         }
     }
 
     engine.borrow_mut().close()?;
-    app.borrow_mut().stop()?;
+    app.with_lock(|mut x| x.stop()).unwrap()?;
 
     if let Some(r) = STDERR_REDIRECT.lock().unwrap().take() {
         drop(r);
@@ -135,7 +155,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn setup_stderr_redirect() -> io::Result<()> {
+fn setup_stderr_redirect() -> io::Result<FdReader> {
     let fds = unsafe {
         let mut fds = MaybeUninit::<[c_int; 2]>::uninit();
         pipe(fds.assume_init_mut().as_mut_ptr());
@@ -145,14 +165,8 @@ fn setup_stderr_redirect() -> io::Result<()> {
     let read_fd = fds[0];
     let write_fd = fds[1];
 
-    spawn(move || {
-        let redirect = Redirect::stderr(write_fd).unwrap();
-        STDERR_REDIRECT.lock().unwrap().replace(redirect);
-        let reader = FdReader::new(read_fd);
-        let reader = BufReader::new(reader);
-        for line in reader.lines() {
-            println!("{:?}", line);
-        }
-    });
-    Ok(())
+    let redirect = Redirect::stderr(write_fd).unwrap();
+    STDERR_REDIRECT.lock().unwrap().replace(redirect);
+    let reader = FdReader::new(read_fd);
+    Ok(reader)
 }

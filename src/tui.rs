@@ -26,7 +26,6 @@ pub struct Candidate {
     pub text: String,
     pub comment: String,
     pub highlighted: bool,
-    pub log: String,
 }
 
 #[derive(Debug, Default)]
@@ -34,6 +33,7 @@ pub struct UiData {
     pub preedit: String,
     pub candidates: Vec<Candidate>,
     pub output: String,
+    pub log: Vec<String>,
 }
 
 impl TuiApp<CrosstermBackend<Stdout>> {
@@ -87,20 +87,31 @@ impl TuiApp<CrosstermBackend<Stdout>> {
             .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
             .split(f.size());
 
+        let preedit_chunk = chunks[0];
+
         let input = Paragraph::new(ui_data.preedit.as_ref())
             .style(Style::default().fg(Color::Yellow))
             .block(Block::default().borders(Borders::ALL).title("Preedit"));
-        f.render_widget(input, chunks[0]);
-        // f.set_cursor(chunks[0].x + app.input.width() as u16 + 1, chunks[0].y + 1);
+        f.render_widget(input, preedit_chunk);
 
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
             .split(chunks[1]);
 
+        let candidates_chunk = chunks[1];
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
+            .split(chunks[0]);
+
+        let message_chunk = chunks[0];
+        let log_chunk = chunks[1];
+
         let message = Paragraph::new(ui_data.output.as_ref())
             .block(Block::default().borders(Borders::ALL).title("Message"));
-        f.render_widget(message, chunks[0]);
+        f.render_widget(message, message_chunk);
 
         let items = ui_data
             .candidates
@@ -116,6 +127,12 @@ impl TuiApp<CrosstermBackend<Stdout>> {
             .collect::<Vec<_>>();
         let list =
             List::new(items).block(Block::default().borders(Borders::ALL).title("Candidates"));
-        f.render_stateful_widget(list, chunks[1], &mut ListState::default());
+        f.render_stateful_widget(list, candidates_chunk, &mut ListState::default());
+
+        let last_line = ui_data.log.last();
+        let last_line = last_line.map(|x| x.as_str()).unwrap_or("");
+        let log =
+            Paragraph::new(last_line).block(Block::default().borders(Borders::ALL).title("Log"));
+        f.render_widget(log, log_chunk);
     }
 }
