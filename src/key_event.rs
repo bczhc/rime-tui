@@ -102,6 +102,9 @@ where
             116 => (self.callback)(compose("Down").as_str()),
             113 => (self.callback)(compose("Left").as_str()),
             114 => (self.callback)(compose("Right").as_str()),
+            23 => (self.callback)(compose("Tab").as_str()),
+            64 => (self.callback)(compose("Alt_L").as_str()),
+            108 => (self.callback)(compose("Alt_R").as_str()),
             _ => {}
         }
 
