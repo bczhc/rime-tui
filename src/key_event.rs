@@ -33,7 +33,7 @@ where
     }
 
     pub fn on_key_event(&mut self, event: &XIDeviceEvent) {
-        // Note: can't get if the key gets consumed by Rime processors when using `send_key_sequence`
+        // Note: can't get if a key gets consumed by Rime processors when using `send_key_sequence`
         // maybe there's a need to switch to `RimeProcessKey`
         let detail = event.detail as u32;
 
@@ -103,8 +103,12 @@ where
             113 => (self.callback)(compose("Left").as_str()),
             114 => (self.callback)(compose("Right").as_str()),
             23 => (self.callback)(compose("Tab").as_str()),
-            64 => (self.callback)(compose("Alt_L").as_str()),
-            108 => (self.callback)(compose("Alt_R").as_str()),
+            ALT_L => (self.callback)(compose("Alt_L").as_str()),
+            ALT_R => (self.callback)(compose("Alt_R").as_str()),
+            SHIFT_L => (self.callback)(compose("Shift_L").as_str()),
+            SHIFT_R => (self.callback)(compose("Shift_R").as_str()),
+            CTRL_L => (self.callback)(compose("Control_L").as_str()),
+            CTRL_R => (self.callback)(compose("Control_R").as_str()),
             _ => {}
         }
 
