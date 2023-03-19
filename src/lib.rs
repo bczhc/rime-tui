@@ -19,9 +19,7 @@ impl<T> WithLockExt<T> for Mutex<T> {
         F: FnOnce(MutexGuard<'_, T>) -> R,
     {
         match self.lock() {
-            Ok(g) => {
-                Ok(block(g))
-            }
+            Ok(g) => Ok(block(g)),
             Err(e) => Err(e),
         }
     }
