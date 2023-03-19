@@ -10,6 +10,7 @@ use std::time::Duration;
 use gag::Redirect;
 use libc::{c_int, pipe};
 use once_cell::sync::Lazy;
+use regex::Regex;
 
 use rime_tui::cli::build_cli;
 use rime_tui::fd_reader::FdReader;
@@ -95,6 +96,11 @@ fn main() -> anyhow::Result<()> {
         }
         if repr == "{space}" && !status.is_composing && ui_data.preedit.is_empty() {
             ui_data.output.push(' ');
+            app.redraw().unwrap();
+            return;
+        }
+        if Regex::new("^\\{[0-9]}$").unwrap().is_match(repr) && !status.is_composing {
+            ui_data.output.push(char::from(repr.as_bytes()[1]));
             app.redraw().unwrap();
             return;
         }
