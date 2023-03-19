@@ -1,11 +1,24 @@
 use std::cell::RefCell;
+use std::io;
+use std::io::{BufRead, BufReader, Read};
+use std::mem::MaybeUninit;
+use std::os::fd::RawFd;
+use std::sync::Mutex;
+use std::thread::spawn;
 use std::time::Duration;
 
+use gag::Redirect;
+use libc::{c_int, pipe};
+use once_cell::sync::Lazy;
+
 use rime_tui::cli::build_cli;
+use rime_tui::fd_reader::FdReader;
 use rime_tui::key_event::KeyEventResolver;
 use rime_tui::rime::{Config, DeployResult, Engine};
 use rime_tui::tui::{Candidate, TuiApp};
 use rime_tui::xinput::XInput;
+
+static STDERR_REDIRECT: Lazy<Mutex<Option<Redirect<RawFd>>>> = Lazy::new(|| Mutex::new(None));
 
 fn main() -> anyhow::Result<()> {
     let matches = build_cli().get_matches();
@@ -13,6 +26,8 @@ fn main() -> anyhow::Result<()> {
     let user_dir = matches.get_one::<String>("user-dir").unwrap();
     let shared_dir = matches.get_one::<String>("shared-dir").unwrap();
     let exit_command = matches.get_one::<String>("exit-command").unwrap();
+
+    setup_stderr_redirect()?;
 
     let mut engine = Engine::new(&Config {
         user_data_dir: user_dir.into(),
@@ -113,5 +128,31 @@ fn main() -> anyhow::Result<()> {
     engine.borrow_mut().close()?;
     app.borrow_mut().stop()?;
 
+    if let Some(r) = STDERR_REDIRECT.lock().unwrap().take() {
+        drop(r);
+    }
+
+    Ok(())
+}
+
+fn setup_stderr_redirect() -> io::Result<()> {
+    let fds = unsafe {
+        let mut fds = MaybeUninit::<[c_int; 2]>::uninit();
+        pipe(fds.assume_init_mut().as_mut_ptr());
+        fds.assume_init()
+    };
+
+    let read_fd = fds[0];
+    let write_fd = fds[1];
+
+    spawn(move || {
+        let redirect = Redirect::stderr(write_fd).unwrap();
+        STDERR_REDIRECT.lock().unwrap().replace(redirect);
+        let reader = FdReader::new(read_fd);
+        let reader = BufReader::new(reader);
+        for line in reader.lines() {
+            println!("{:?}", line);
+        }
+    });
     Ok(())
 }

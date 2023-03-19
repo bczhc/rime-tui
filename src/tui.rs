@@ -26,6 +26,7 @@ pub struct Candidate {
     pub text: String,
     pub comment: String,
     pub highlighted: bool,
+    pub log: String,
 }
 
 #[derive(Debug, Default)]
