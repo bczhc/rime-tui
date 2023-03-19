@@ -82,8 +82,6 @@ fn main() -> anyhow::Result<()> {
         let mut app = app.lock().unwrap();
         let ui_data = &mut app.ui_data;
 
-        // let status = engine.status().unwrap();
-
         // kAccepted: true, otherwise false
         let result = engine.process_key(ke).unwrap();
         if !result && ke.modifiers == 0 {

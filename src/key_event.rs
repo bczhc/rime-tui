@@ -51,7 +51,7 @@ where
 
         let mut ke = KeyEvent::new(0, 0);
 
-        // symbols will be changed when Shift pressed, e.g. XK_2 -> XK_at
+        // symbols will change when Shift is pressed, e.g. XK_2 -> XK_at
         let shift_pressed = self.shift_pressed;
         let code = match detail {
             d @ 24..=33 if shift_pressed => {
