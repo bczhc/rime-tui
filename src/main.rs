@@ -86,6 +86,7 @@ fn main() -> anyhow::Result<()> {
         let result = engine.process_key(ke).unwrap();
         if !result && ke.modifiers == 0 {
             // default behaviors
+            #[allow(non_upper_case_globals)]
             match ke.key_code as u32 {
                 k @ XK_a..=XK_z => ui_data.output.push(char::from((k - XK_a) as u8 + b'a')),
                 k @ XK_0..=XK_9 => ui_data.output.push(char::from((k - XK_0) as u8 + b'0')),
