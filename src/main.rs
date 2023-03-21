@@ -18,7 +18,7 @@ use rime_tui::key_event::KeyEventResolver;
 use rime_tui::rime::{Config, DeployResult, Engine};
 use rime_tui::tui::{Candidate, TuiApp};
 use rime_tui::xinput::XInput;
-use rime_tui::WithLockExt;
+use rime_tui::{load_clipboard, put_clipboard, WithLockExt};
 
 static STDERR_REDIRECT: Lazy<Mutex<Option<Redirect<RawFd>>>> = Lazy::new(|| Mutex::new(None));
 
@@ -28,6 +28,8 @@ fn main() -> anyhow::Result<()> {
     let user_dir = matches.get_one::<String>("user-dir").unwrap();
     let shared_dir = matches.get_one::<String>("shared-dir").unwrap();
     let exit_command = matches.get_one::<String>("exit-command").unwrap();
+    let copy_command = matches.get_one::<String>("copy-command").unwrap();
+    let load_command = matches.get_one::<String>("load-command").unwrap();
 
     let app = TuiApp::new()?;
     let app = Arc::new(Mutex::new(app));
@@ -135,9 +137,28 @@ fn main() -> anyhow::Result<()> {
 
         key_resolver.on_key_event(&event);
 
-        if &app.lock().unwrap().ui_data.preedit == exit_command {
-            break;
+        // custom commands
+        let mut app_guard = app.lock().unwrap();
+        let preedit = &app_guard.ui_data.preedit;
+        match preedit.as_str() {
+            _ if preedit == exit_command => {
+                break;
+            }
+            _ if preedit == copy_command => {
+                put_clipboard(app_guard.ui_data.output.as_str())?;
+                app_guard.ui_data.preedit.clear();
+                engine.borrow_mut().simulate_key_sequence("{Escape}")?;
+                app_guard.redraw()?;
+            }
+            _ if preedit == load_command => {
+                app_guard.ui_data.output = load_clipboard()?;
+                app_guard.ui_data.preedit.clear();
+                engine.borrow_mut().simulate_key_sequence("{Escape}")?;
+                app_guard.redraw()?;
+            }
+            _ => {}
         }
+        drop(app_guard);
     }
 
     engine.borrow_mut().close()?;

@@ -20,19 +20,36 @@ pub fn build_cli() -> Command {
                 .long("shared-dir")
                 .default_value(shared_data_dir)
                 .value_hint(ValueHint::DirPath)
-                .action(ArgAction::Set),
+                .action(ArgAction::Set)
+                .help("Rime shared data directory"),
         )
         .arg(
             Arg::new("user-dir")
                 .long("user-dir")
                 .default_value(user_data_dir)
                 .value_hint(ValueHint::DirPath)
-                .action(ArgAction::Set),
+                .action(ArgAction::Set)
+                .help("Rime user data directory"),
         )
         .arg(
             Arg::new("exit-command")
                 .long("exit-command")
                 .default_value("/exit")
-                .action(ArgAction::Set),
+                .action(ArgAction::Set)
+                .help("Input command for exiting the program"),
+        )
+        .arg(
+            Arg::new("copy-command")
+                .long("copy-command")
+                .default_value("/copy")
+                .action(ArgAction::Set)
+                .help("Input command for putting the output into X11 clipboard"),
+        )
+        .arg(
+            Arg::new("load-command")
+                .long("load-command")
+                .action(ArgAction::Set)
+                .default_value("/load")
+                .help("Input command for loading from X11 clipboard"),
         )
 }
