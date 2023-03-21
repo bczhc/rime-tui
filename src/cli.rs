@@ -13,7 +13,8 @@ pub fn build_cli() -> Command {
                 .required(true)
                 .short('s')
                 .long("schema")
-                .action(ArgAction::Set),
+                .action(ArgAction::Set)
+                .required(false),
         )
         .arg(
             Arg::new("shared-dir")

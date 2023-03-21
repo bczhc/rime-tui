@@ -24,7 +24,7 @@ static STDERR_REDIRECT: Lazy<Mutex<Option<Redirect<RawFd>>>> = Lazy::new(|| Mute
 
 fn main() -> anyhow::Result<()> {
     let matches = build_cli().get_matches();
-    let schema = matches.get_one::<String>("schema").unwrap();
+    let schema = matches.get_one::<String>("schema");
     let user_dir = matches.get_one::<String>("user-dir").unwrap();
     let shared_dir = matches.get_one::<String>("shared-dir").unwrap();
     let exit_command = matches.get_one::<String>("exit-command").unwrap();
@@ -76,7 +76,9 @@ fn main() -> anyhow::Result<()> {
         }
     }
     engine.create_session()?;
-    engine.select_schema(schema)?;
+    if let Some(schema) = schema {
+        engine.select_schema(schema)?;
+    }
 
     let engine = RefCell::new(engine);
     let mut key_resolver = KeyEventResolver::new(|ke| {
