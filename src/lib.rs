@@ -6,7 +6,6 @@ use x11_clipboard::Clipboard;
 pub mod cli;
 pub mod fd_reader;
 pub mod key_event;
-pub mod rime;
 pub mod tui;
 pub mod xinput;
 
@@ -59,3 +58,8 @@ pub fn load_clipboard() -> Result<String, ClipboardError> {
         Err(e) => Err(e),
     }
 }
+
+pub const DISTRIBUTION_NAME: &str = "Rime";
+pub const DISTRIBUTION_CODE_NAME: &str = "Rime";
+pub const DISTRIBUTION_VERSION: &str = "0.0.0";
+pub const APP_NAME: &str = "rime-tui";

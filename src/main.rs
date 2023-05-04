@@ -10,15 +10,19 @@ use std::time::Duration;
 use gag::Redirect;
 use libc::{c_int, pipe};
 use once_cell::sync::Lazy;
+use rime_api::engine::{DeployResult, Engine};
+use rime_api::{KeyStatus, Traits};
 use x11::keysym::*;
 
 use rime_tui::cli::build_cli;
 use rime_tui::fd_reader::FdReader;
 use rime_tui::key_event::KeyEventResolver;
-use rime_tui::rime::{Config, DeployResult, Engine};
 use rime_tui::tui::{Candidate, TuiApp};
 use rime_tui::xinput::XInput;
-use rime_tui::{load_clipboard, put_clipboard, WithLockExt};
+use rime_tui::{
+    load_clipboard, put_clipboard, WithLockExt, APP_NAME, DISTRIBUTION_CODE_NAME,
+    DISTRIBUTION_NAME, DISTRIBUTION_VERSION,
+};
 
 static STDERR_REDIRECT: Lazy<Mutex<Option<Redirect<RawFd>>>> = Lazy::new(|| Mutex::new(None));
 
@@ -58,15 +62,17 @@ fn main() -> anyhow::Result<()> {
         }
     });
 
-    let mut engine = Engine::new(&Config {
-        user_data_dir: user_dir.into(),
-        shared_data_dir: shared_dir.into(),
-    });
+    let mut traits = Traits::new();
+    traits.set_user_data_dir(user_dir);
+    traits.set_shared_data_dir(shared_dir);
+    traits.set_distribution_name(DISTRIBUTION_NAME);
+    traits.set_distribution_code_name(DISTRIBUTION_CODE_NAME);
+    traits.set_distribution_version(DISTRIBUTION_VERSION);
+    traits.set_app_name(APP_NAME);
+
+    let mut engine = Engine::new(traits);
     let deploy_result = engine.wait_for_deploy_result(Duration::from_secs_f64(0.1));
     match deploy_result {
-        DeployResult::Init => {
-            unreachable!();
-        }
         DeployResult::Success => {
             eprintln!("Deployment succeeded");
         }
@@ -76,19 +82,20 @@ fn main() -> anyhow::Result<()> {
         }
     }
     engine.create_session()?;
+    let session = engine.session().unwrap();
     if let Some(schema) = schema {
-        engine.select_schema(schema)?;
+        session.select_schema(schema);
     }
 
     let engine = RefCell::new(engine);
     let mut key_resolver = KeyEventResolver::new(|ke| {
-        let mut engine = engine.borrow_mut();
+        let engine = engine.borrow();
+        let session = engine.session().unwrap();
         let mut app = app.lock().unwrap();
         let ui_data = &mut app.ui_data;
 
-        // kAccepted: true, otherwise false
-        let result = engine.process_key(ke).unwrap();
-        if !result && ke.modifiers == 0 {
+        let key_status = session.process_key(ke);
+        if key_status == KeyStatus::Pass && ke.modifiers == 0 {
             // default behaviors
             #[allow(non_upper_case_globals)]
             match ke.key_code as u32 {
@@ -103,7 +110,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        let context = engine.context();
+        let context = session.context();
         let menu = &context.as_ref().unwrap().menu;
         let preedit = context.as_ref().unwrap().composition.preedit.unwrap_or("");
 
@@ -119,7 +126,7 @@ fn main() -> anyhow::Result<()> {
             })
             .collect();
         drop(context);
-        let commit = engine.commit();
+        let commit = session.commit();
         // TODO: if taking the ownership of `commit` in the `match` below,
         //  `c.text` will be freed and thus its data is invalid
         let commit = match &commit {
@@ -142,6 +149,9 @@ fn main() -> anyhow::Result<()> {
         // custom commands
         let mut app_guard = app.lock().unwrap();
         let preedit = &app_guard.ui_data.preedit;
+
+        let engine = engine.borrow();
+        let session = engine.session().unwrap();
         match preedit.as_str() {
             _ if preedit == exit_command => {
                 break;
@@ -149,13 +159,13 @@ fn main() -> anyhow::Result<()> {
             _ if preedit == copy_command => {
                 put_clipboard(app_guard.ui_data.output.as_str())?;
                 app_guard.ui_data.preedit.clear();
-                engine.borrow_mut().simulate_key_sequence("{Escape}")?;
+                session.simulate_key_sequence("{Escape}")?;
                 app_guard.redraw()?;
             }
             _ if preedit == load_command => {
                 app_guard.ui_data.output = load_clipboard()?;
                 app_guard.ui_data.preedit.clear();
-                engine.borrow_mut().simulate_key_sequence("{Escape}")?;
+                session.simulate_key_sequence("{Escape}")?;
                 app_guard.redraw()?;
             }
             _ => {}
@@ -163,7 +173,7 @@ fn main() -> anyhow::Result<()> {
         drop(app_guard);
     }
 
-    engine.borrow_mut().close()?;
+    drop(engine);
     app.with_lock(|mut x| x.stop()).unwrap()?;
 
     if let Some(r) = STDERR_REDIRECT.lock().unwrap().take() {
