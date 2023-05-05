@@ -35,6 +35,7 @@ pub struct UiData {
     pub candidates: Vec<Candidate>,
     pub output: String,
     pub log: Vec<String>,
+    pub select_labels: Option<Vec<String>>,
 }
 
 impl TuiApp<CrosstermBackend<Stdout>> {
@@ -130,7 +131,14 @@ impl TuiApp<CrosstermBackend<Stdout>> {
             .iter()
             .enumerate()
             .map(|(i, c)| {
-                let mut item = ListItem::new(format!("{}. {}{}", i + 1, c.text, c.comment));
+                let label = match &ui_data.select_labels {
+                    None => {
+                        format!("{}.", i + 1)
+                    }
+                    Some(l) => l[i].clone(),
+                };
+
+                let mut item = ListItem::new(format!("{} {}{}", label, c.text, c.comment));
                 if c.highlighted {
                     item = item.style(Style::default().fg(Color::Black).bg(Color::White));
                 }

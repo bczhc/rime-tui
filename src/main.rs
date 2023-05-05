@@ -113,6 +113,7 @@ fn main() -> anyhow::Result<()> {
         let context = session.context();
         let menu = &context.as_ref().unwrap().menu;
         let preedit = context.as_ref().unwrap().composition.preedit.unwrap_or("");
+        let select_labels = &context.as_ref().unwrap().select_labels;
 
         ui_data.preedit = String::from(preedit);
         ui_data.candidates = menu
@@ -125,6 +126,9 @@ fn main() -> anyhow::Result<()> {
                 highlighted: i == menu.highlighted_candidate_index as usize,
             })
             .collect();
+        if let Some(l) = select_labels {
+            ui_data.select_labels = Some(l.iter().map(|x| String::from(*x)).collect::<Vec<_>>());
+        }
         drop(context);
         let commit = session.commit();
         // TODO: if taking the ownership of `commit` in the `match` below,
