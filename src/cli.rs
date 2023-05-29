@@ -53,4 +53,11 @@ pub fn build_cli() -> Command {
                 .default_value("/load")
                 .help("Input command for loading from X11 clipboard"),
         )
+        .arg(
+            Arg::new("log-dir")
+                .long("log-dir")
+                .short('l')
+                .required(false)
+                .help("Directory location for log files"),
+        )
 }

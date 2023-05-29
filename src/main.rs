@@ -1,8 +1,10 @@
 use std::cell::RefCell;
+use std::fs::File;
 use std::io;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, BufWriter};
 use std::mem::MaybeUninit;
 use std::os::fd::RawFd;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread::spawn;
 use std::time::Duration;
@@ -34,6 +36,19 @@ fn main() -> anyhow::Result<()> {
     let exit_command = matches.get_one::<String>("exit-command").unwrap();
     let copy_command = matches.get_one::<String>("copy-command").unwrap();
     let load_command = matches.get_one::<String>("load-command").unwrap();
+    let log_dir = matches.get_one::<String>("log-dir");
+
+    let log_file = if let Some(d) = log_dir {
+        let log_filename = chrono::Local::now().format("%Y%m%d-%H%M%S.log").to_string();
+        let file = File::options()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(PathBuf::from(d).join(log_filename))?;
+        Some(BufWriter::new(file))
+    } else {
+        None
+    };
 
     let app = TuiApp::new()?;
     let app = Arc::new(Mutex::new(app));
@@ -50,9 +65,15 @@ fn main() -> anyhow::Result<()> {
     spawn(move || {
         let stderr_reader = setup_stderr_redirect().unwrap();
         let app = app_clone;
+        let mut log_file = log_file;
 
         let reader = BufReader::new(stderr_reader);
         for line in reader.lines().map(Result::unwrap) {
+            if let Some(w) = &mut log_file {
+                use std::io::Write;
+                writeln!(w, "{}", line).unwrap();
+            }
+
             app.with_lock(|mut x| {
                 x.ui_data.log.push(line);
                 x.redraw()
