@@ -101,7 +101,7 @@ where
             59 if shift_pressed => XK_less,
             59 => XK_comma,
             60 if shift_pressed => XK_greater,
-            60 => XK_percent,
+            60 => XK_period,
             61 if shift_pressed => XK_question,
             61 => XK_slash,
             d @ 10..=19 => {
